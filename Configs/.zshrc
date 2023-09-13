@@ -116,6 +116,7 @@ alias pc='sudo pacman -Sc' # remove unused cache
 alias po='pacman -Qtdq | sudo pacman -Rns -' # remove unused packages, also try > pacman -Qqd | pacman -Rsu --print -
 alias vc='code'  # gui code editor
 
+alias vi='vim'
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
@@ -127,3 +128,6 @@ pokemon-colorscripts --no-title -r 1,3,6
 
 #Display random gifs
 #kitten icat --align left $(find $HOME/.config/neofetch/gifs/ -name "*.gif" | sort -R | head -1)
+
+#Export Variable
+export PATH="$HOME/.local/bin":$PATH
