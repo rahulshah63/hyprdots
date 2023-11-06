@@ -3,49 +3,53 @@
 # Check if wlogout is already running
 if pgrep -x "wlogout" > /dev/null
 then
-    # Kill wlogout
     pkill -x "wlogout"
     exit 0
 fi
 
 # set file variables
+ScrDir=`dirname $(realpath $0)`
+source $ScrDir/globalcontrol.sh
 wLayout="$HOME/.config/wlogout/layout_$1"
 wlTmplt="$HOME/.config/wlogout/style_$1.css"
 
 if [ ! -f $wLayout ] || [ ! -f $wlTmplt ] ; then
-    echo "ERROR: Style $1 not found..."
+    echo "ERROR: Config $1 not found..."
     exit 1;
 fi
 
-# detect monitor y res
-res=`cat /sys/class/drm/*/modes | head -1 | cut -d 'x' -f 2`
+# detect monitor res
+x_mon=$(hyprctl -j monitors | jq '.[] | select(.focused==true) | .width')
+y_mon=$(hyprctl -j monitors | jq '.[] | select(.focused==true) | .height')
+hypr_scale=$(hyprctl -j monitors | jq '.[] | select (.focused == true) | .scale' | sed 's/\.//')
+
 
 # scale config layout and style
 case $1 in
     1)  wlColms=6
-        export mgn=$(( res * 26 / 100 ))
-        export hvr=$(( res * 21 / 100 )) ;;
+        export mgn=$(( y_mon * 28 / hypr_scale ))
+        export hvr=$(( y_mon * 23 / hypr_scale )) ;;
     2)  wlColms=2
-        export x_mgn=$(( res * 80 / 100  ))
-        export y_mgn=$(( res * 25 / 100 ))
-        export x_hvr=$(( res * 75 / 100 ))
-        export y_hvr=$(( res * 20 / 100 )) ;;
+        export x_mgn=$(( x_mon * 35 / hypr_scale ))
+        export y_mgn=$(( y_mon * 25 / hypr_scale ))
+        export x_hvr=$(( x_mon * 32 / hypr_scale ))
+        export y_hvr=$(( y_mon * 20 / hypr_scale )) ;;
 esac
 
 # scale font size
-export fntSize=$(( res * 2 / 100 ))
+export fntSize=$(( y_mon * 2 / 100 ))
 
 # detect gtk system theme
-export gtkThm=`gsettings get org.gnome.desktop.interface gtk-theme | sed "s/'//g"`
-export csMode=`gsettings get org.gnome.desktop.interface color-scheme | sed "s/'//g" | awk -F '-' '{print $2}'`
-export BtnCol=`[ "$csMode" == "dark" ] && ( echo "black" ) || ( echo "white" )`
-export BtnBkg=`[ "$csMode" == "dark" ] && ( echo "color" ) || ( echo "bg" )`
-export WindBg=`[ "$csMode" == "dark" ] && ( echo "rgba(0,0,0,0.5)" ) || ( echo "rgba(255,255,255,0.6)" )`
-export wbarTheme="$HOME/.config/waybar/themes/${gtkThm}.css"
+export BtnCol=`[ "$gtkMode" == "dark" ] && ( echo "white" ) || ( echo "black" )`
+export WindBg=`[ "$gtkMode" == "dark" ] && ( echo "rgba(0,0,0,0.5)" ) || ( echo "rgba(255,255,255,0.5)" )`
+
+if [ "$EnableWallDcol" -eq 1 ] ; then
+    export wbarTheme="Wall-Dcol"
+else
+    export wbarTheme="${gtkTheme}"
+fi
 
 # eval hypr border radius
-hyprTheme="$HOME/.config/hypr/themes/${gtkThm}.conf"
-hypr_border=`awk -F '=' '{if($1~" rounding ") print $2}' $hyprTheme | sed 's/ //g'`
 export active_rad=$(( hypr_border * 5 ))
 export button_rad=$(( hypr_border * 8 ))
 

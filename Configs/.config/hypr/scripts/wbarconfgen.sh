@@ -3,7 +3,7 @@
 
 # read control file and initialize variables
 
-scr_dir=`dirname $(realpath $0)`
+ScrDir=`dirname $(realpath $0)`
 waybar_dir="$HOME/.config/waybar"
 modules_dir="$waybar_dir/modules"
 conf_file="$waybar_dir/config.jsonc"
@@ -18,24 +18,25 @@ switch=0
 
 if [ $num_files -gt 1 ]
 then
-  for (( i=0 ; i<$num_files ; i++ ))
-  do
-    flag=`echo "${read_ctl[i]}" | cut -d '|' -f 1`
-    if [ $flag -eq 1 ] && [ "$1" == "n" ] ; then
-        nextIndex=$(( (i + 1) % $num_files ))
-        switch=1
-        break;
+    for (( i=0 ; i<$num_files ; i++ ))
+    do
+        flag=`echo "${read_ctl[i]}" | cut -d '|' -f 1`
+        if [ $flag -eq 1 ] && [ "$1" == "n" ] ; then
+            nextIndex=$(( (i + 1) % $num_files ))
+            switch=1
+            break;
 
-    elif [ $flag -eq 1 ] && [ "$1" == "p" ] ; then
-        nextIndex=$(( i - 1 ))
-        switch=1
-        break;
-    fi
-done
+        elif [ $flag -eq 1 ] && [ "$1" == "p" ] ; then
+            nextIndex=$(( i - 1 ))
+            switch=1
+            break;
+        fi
+    done
 fi
 
 if [ $switch -eq 1 ] ; then
     update_ctl="${read_ctl[nextIndex]}"
+    export reload_flag=1
     sed -i "s/^1/0/g" $conf_ctl
     awk -F '|' -v cmp="$update_ctl" '{OFS=FS} {if($0==cmp) $1=1; print$0}' $conf_ctl > $waybar_dir/tmp && mv $waybar_dir/tmp $conf_ctl
 fi
@@ -99,9 +100,8 @@ gen_mod right 6
 # copy modules/*.jsonc to the config
 
 echo -e "\n\n// sourced from modules based on config.ctl //\n" >> $conf_file
-echo "$write_mod" | sed 's/","/\n/g ; s/ /\n/g' | awk '!x[$0]++' | while read mod_list
+echo "$write_mod" | sed 's/","/\n/g ; s/ /\n/g' | awk -F '/' '{print $NF}' | awk -F '#' '{print $1}' | awk '!x[$0]++' | while read mod_cpy
 do
-    mod_cpy=`echo $mod_list | awk -F '/' '{print $NF}'`
 
 #    case ${w_position}-$(grep -E '"modules-left":|"modules-center":|"modules-right":' $conf_file | grep "$mod_cpy" | tail -1 | cut -d '"' -f 2 | cut -d '-' -f 2) in
 #        top-left) export mod_pos=1;;
@@ -120,6 +120,6 @@ cat $modules_dir/footer.jsonc >> $conf_file
 
 # generate style and restart waybar
 
-$scr_dir/wbarstylegen.sh
+$ScrDir/wbarstylegen.sh
 
 
